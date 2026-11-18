@@ -1,0 +1,22 @@
+{
+  "name": "reiterate",
+  "version": "0.1.0",
+  "description": "Read Reiterate workflows, runs, web agents, tasks and month-end status with the reiterate CLI",
+  "author": { "name": "Reiterate", "url": "https://reiterate.com" },
+  "homepage": "https://github.com/iter8-ai/cli",
+  "repository": "https://github.com/iter8-ai/cli",
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Reiterate",
+    "shortDescription": "Read Reiterate accounting workflows from the terminal",
+    "longDescription": "Teaches the agent to install and use the reiterate CLI: workflows and their runs, web agents, tasks, members, integrations and month-end status for a Reiterate organization.",
+    "developerName": "Reiterate",
+    "category": "Productivity",
+    "capabilities": ["Read"],
+    "websiteURL": "https://reiterate.com",
+    "defaultPrompt": [
+      "How did my Reiterate workflow runs go this week?",
+      "Which Reiterate workflow runs failed today, and why?"
+    ]
+  }
+}

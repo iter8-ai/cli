@@ -1,0 +1,13 @@
+{
+  "name": "reiterate",
+  "owner": { "name": "Reiterate" },
+  "description": "Reiterate CLI skill for coding agents",
+  "plugins": [
+    {
+      "name": "reiterate",
+      "source": "./",
+      "description": "Read Reiterate workflows, runs, web agents, tasks and month-end status with the reiterate CLI",
+      "category": "productivity"
+    }
+  ]
+}

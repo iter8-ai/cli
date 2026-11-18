@@ -1,0 +1,8 @@
+{
+  "name": "reiterate",
+  "version": "0.1.0",
+  "description": "Read Reiterate workflows, runs, web agents, tasks and month-end status with the reiterate CLI",
+  "author": { "name": "Reiterate", "url": "https://reiterate.com" },
+  "homepage": "https://github.com/iter8-ai/cli",
+  "repository": "https://github.com/iter8-ai/cli"
+}
