@@ -59,6 +59,19 @@ codex plugin add reiterate@reiterate
 
 Any other agent: point it at [skills/reiterate/SKILL.md](skills/reiterate/SKILL.md).
 
+## Updating
+
+From 0.2.0 on, the CLI keeps itself up to date. Once a day a command checks the [latest release](https://github.com/iter8-ai/cli/releases/latest) in the background and, when the install directory is writable, installs a newer version after verifying its SHA-256 checksum. Update checks need no login and send no credentials.
+
+```sh
+reiterate update --check   # is a newer release out?
+reiterate update           # install it now
+reiterate configure set auto_update off   # only report new releases
+reiterate configure set update_check off  # no background checks at all
+```
+
+Version 0.1.0 has no `update` command: run the install command once more to move to the current release.
+
 ## License
 
 All rights reserved; no open-source license is granted. The source code is not published here.
