@@ -12,7 +12,7 @@ macOS and Linux, Intel or ARM:
 curl -fsSL https://raw.githubusercontent.com/iter8-ai/cli/main/install.sh | sh
 ```
 
-The script downloads the binary for your machine from the [latest release](https://github.com/iter8-ai/cli/releases/latest), verifies its SHA-256 checksum and installs it to `~/.local/bin/reiterate`. Set `REITERATE_INSTALL_DIR` to install elsewhere, or `REITERATE_VERSION=0.1.0` to pin a version.
+The script downloads the binary for your machine from the [latest release](https://github.com/iter8-ai/cli/releases/latest), verifies its SHA-256 checksum and installs it to `~/.local/bin/reiterate`. Set `REITERATE_INSTALL_DIR` to install elsewhere, or `REITERATE_VERSION=0.1.0` to install a specific version.
 
 ## Log in
 
@@ -62,6 +62,8 @@ Any other agent: point it at [skills/reiterate/SKILL.md](skills/reiterate/SKILL.
 ## Updating
 
 From 0.2.0 on, the CLI keeps itself up to date. Once a day a command checks the [latest release](https://github.com/iter8-ai/cli/releases/latest) in the background and, when the install directory is writable, installs a newer version after verifying its SHA-256 checksum. Update checks need no login and send no credentials.
+
+To keep a specific installed version from 0.2.0 on, run `reiterate configure set auto_update off`.
 
 ```sh
 reiterate update --check   # is a newer release out?
