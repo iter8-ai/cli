@@ -18,7 +18,7 @@ The script downloads the binary for your machine from the [latest release](https
 
 ### Windows
 
-AMD64 or ARM64, in Windows PowerShell 5.1 or PowerShell 7:
+AMD64 or ARM64, in Windows PowerShell 5.1 or PowerShell 7. Windows binaries are available from v0.2.2.
 
 ```powershell
 irm https://raw.githubusercontent.com/iter8-ai/cli/main/install.ps1 | iex
