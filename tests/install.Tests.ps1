@@ -166,7 +166,7 @@ try {
         if (Get-ChildItem -LiteralPath $env:REITERATE_INSTALL_DIR -Filter '.reiterate-install-*') { throw 'Version-resolution tests left staging files' }
         Write-Output 'PASS: PowerShell latest resolution pins both assets and validates manifest/explicit versions'
     }
-    Write-Output 'PASS: parser, caller preferences, AMD64/ARM64/WOW64 architecture, unsupported architecture, checksum match and rejection cases'
+    Write-Output 'PASS: parser, AMD64/ARM64/WOW64 architecture, unsupported architecture, checksum match and rejection cases'
 } finally {
     $env:REITERATE_VERSION = $savedVersion
     $env:REITERATE_INSTALL_DIR = $savedInstallDir
