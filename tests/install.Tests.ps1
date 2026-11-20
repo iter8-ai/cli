@@ -3,27 +3,30 @@ $ErrorActionPreference = 'Stop'
 $installer = Join-Path (Split-Path -Parent $PSScriptRoot) 'install.ps1'
 $tokens = $null
 $parseErrors = $null
-$null = [System.Management.Automation.Language.Parser]::ParseFile($installer, [ref]$tokens, [ref]$parseErrors)
+$ast = [System.Management.Automation.Language.Parser]::ParseFile($installer, [ref]$tokens, [ref]$parseErrors)
 if ($parseErrors.Count) {
     throw ($parseErrors | Out-String)
 }
 
-$savedDryRun = $env:REITERATE_INSTALL_DRYRUN
+& (Get-Process -Id $PID).Path -NoProfile -File (Join-Path $PSScriptRoot 'install-scope.Tests.ps1') $installer
+if ($LASTEXITCODE -ne 0) { throw 'Installer caller-scope regression failed' }
+
 $savedVersion = $env:REITERATE_VERSION
 $savedInstallDir = $env:REITERATE_INSTALL_DIR
 $savedArchitecture = $env:PROCESSOR_ARCHITECTURE
 $savedWowArchitecture = $env:PROCESSOR_ARCHITEW6432
 $tmp = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
 try {
-    $env:REITERATE_INSTALL_DRYRUN = '1'
     $sessionPath = $env:Path
     $securityProtocol = [Net.ServicePointManager]::SecurityProtocol
     $savedProgressPreference = $ProgressPreference
     $ErrorActionPreference = 'Continue'
     $ProgressPreference = 'Continue'
-    . $installer
+    foreach ($definition in $ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
+        . ([scriptblock]::Create($definition.Extent.Text))
+    }
     if ($env:Path -cne $sessionPath -or [Net.ServicePointManager]::SecurityProtocol -ne $securityProtocol -or $ErrorActionPreference -ne 'Continue' -or $ProgressPreference -ne 'Continue') {
-        throw 'Dry run changed caller preferences, PATH or TLS settings'
+        throw 'Loading helpers changed caller preferences, PATH or TLS settings'
     }
     $ErrorActionPreference = 'Stop'
     $ProgressPreference = $savedProgressPreference
@@ -63,7 +66,6 @@ try {
         if (-not $rejected) { throw "Invalid checksum was accepted: $invalid" }
     }
     & {
-        $env:REITERATE_INSTALL_DRYRUN = ''
         $env:PROCESSOR_ARCHITECTURE = 'AMD64'
         $env:REITERATE_VERSION = '1.2.3'
         $env:REITERATE_INSTALL_DIR = Join-Path $tmp 'install'
@@ -92,11 +94,10 @@ try {
         if (Test-Path -LiteralPath $downloads[0]) { throw 'Failed installation left binary staging behind' }
         Write-Output 'PASS: same-directory binary staging and checksum-failure cleanup'
     }
-    Write-Output 'PASS: parser, dry-run caller preferences, AMD64/ARM64/WOW64 architecture, unsupported architecture, checksum match and rejection cases'
+    Write-Output 'PASS: parser, caller preferences, AMD64/ARM64/WOW64 architecture, unsupported architecture, checksum match and rejection cases'
 } finally {
     $env:REITERATE_VERSION = $savedVersion
     $env:REITERATE_INSTALL_DIR = $savedInstallDir
-    $env:REITERATE_INSTALL_DRYRUN = $savedDryRun
     $env:PROCESSOR_ARCHITECTURE = $savedArchitecture
     $env:PROCESSOR_ARCHITEW6432 = $savedWowArchitecture
     if (Test-Path -LiteralPath $tmp) {

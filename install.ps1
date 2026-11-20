@@ -1,38 +1,34 @@
 # Installs the Reiterate CLI from the latest public release.
 #   irm https://raw.githubusercontent.com/iter8-ai/cli/main/install.ps1 | iex
 # Settings: REITERATE_INSTALL_DIR (default $env:LOCALAPPDATA\Programs\reiterate), REITERATE_VERSION (default latest)
-function Get-ReiterateArchitecture {
-    $architecture = $env:PROCESSOR_ARCHITECTURE
-    if ($env:PROCESSOR_ARCHITEW6432) {
-        $architecture = $env:PROCESSOR_ARCHITEW6432
-    }
-    switch ($architecture) {
-        'AMD64' { return 'amd64' }
-        'ARM64' { return 'arm64' }
-        default { throw "reiterate: unsupported architecture '$architecture'; Windows AMD64 and ARM64 only" }
-    }
-}
-
-function Assert-ReiterateChecksum {
-    param([string]$BinaryPath, [string]$ChecksumsPath, [string]$FileName = (Split-Path -Leaf $BinaryPath))
-
-    $file = $FileName
-    $entries = @(Get-Content -LiteralPath $ChecksumsPath | Where-Object { ($_.Trim() -split '\s+')[-1] -ceq $file })
-    if ($entries.Count -ne 1 -or $entries[0] -cnotmatch ('^([a-fA-F0-9]{64})  ' + [regex]::Escape($file) + '$')) {
-        throw "reiterate: missing or invalid checksum for $file; nothing installed"
-    }
-    $expected = $Matches[1]
-    $actual = (Get-FileHash -LiteralPath $BinaryPath -Algorithm SHA256).Hash
-    if ($expected -ne $actual) {
-        throw "reiterate: checksum mismatch for $file; nothing installed"
-    }
-}
-
-if ($env:REITERATE_INSTALL_DRYRUN -eq '1') {
-    return
-}
-
 & {
+    function Get-ReiterateArchitecture {
+        $architecture = $env:PROCESSOR_ARCHITECTURE
+        if ($env:PROCESSOR_ARCHITEW6432) {
+            $architecture = $env:PROCESSOR_ARCHITEW6432
+        }
+        switch ($architecture) {
+            'AMD64' { return 'amd64' }
+            'ARM64' { return 'arm64' }
+            default { throw "reiterate: unsupported architecture '$architecture'; Windows AMD64 and ARM64 only" }
+        }
+    }
+
+    function Assert-ReiterateChecksum {
+        param([string]$BinaryPath, [string]$ChecksumsPath, [string]$FileName = (Split-Path -Leaf $BinaryPath))
+
+        $file = $FileName
+        $entries = @(Get-Content -LiteralPath $ChecksumsPath | Where-Object { ($_.Trim() -split '\s+')[-1] -ceq $file })
+        if ($entries.Count -ne 1 -or $entries[0] -cnotmatch ('^([a-fA-F0-9]{64})  ' + [regex]::Escape($file) + '$')) {
+            throw "reiterate: missing or invalid checksum for $file; nothing installed"
+        }
+        $expected = $Matches[1]
+        $actual = (Get-FileHash -LiteralPath $BinaryPath -Algorithm SHA256).Hash
+        if ($expected -ne $actual) {
+            throw "reiterate: checksum mismatch for $file; nothing installed"
+        }
+    }
+
     $ErrorActionPreference = 'Stop'
     $ProgressPreference = 'SilentlyContinue'
     $architecture = Get-ReiterateArchitecture
