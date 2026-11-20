@@ -9,6 +9,8 @@ if ($parseErrors.Count) {
 }
 
 $savedDryRun = $env:REITERATE_INSTALL_DRYRUN
+$savedVersion = $env:REITERATE_VERSION
+$savedInstallDir = $env:REITERATE_INSTALL_DIR
 $savedArchitecture = $env:PROCESSOR_ARCHITECTURE
 $savedWowArchitecture = $env:PROCESSOR_ARCHITEW6432
 $tmp = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
@@ -60,8 +62,40 @@ try {
         try { Assert-ReiterateChecksum -BinaryPath $binary -ChecksumsPath $checksums } catch { $rejected = $_.Exception.Message -like '*nothing installed*' }
         if (-not $rejected) { throw "Invalid checksum was accepted: $invalid" }
     }
+    & {
+        $env:REITERATE_INSTALL_DRYRUN = ''
+        $env:PROCESSOR_ARCHITECTURE = 'AMD64'
+        $env:REITERATE_VERSION = '1.2.3'
+        $env:REITERATE_INSTALL_DIR = Join-Path $tmp 'install'
+        $downloads = [Collections.Generic.List[string]]::new()
+        $pathBefore = $env:Path
+        function Invoke-WebRequest {
+            param($Uri, $OutFile, [switch]$UseBasicParsing, $SslProtocol)
+            $downloads.Add($OutFile)
+            if ($Uri -like '*/checksums.txt') {
+                [IO.File]::WriteAllText($OutFile, ('0' * 64 + "  reiterate-windows-amd64.exe`n"))
+            } else {
+                [IO.File]::WriteAllText($OutFile, 'abc')
+            }
+        }
+        $failure = ''
+        try { & $installer } catch { $failure = $_.Exception.Message }
+        if ($downloads.Count -ne 2 -or (Split-Path -Parent $downloads[0]) -cne $env:REITERATE_INSTALL_DIR) {
+            throw 'Binary staging must be inside REITERATE_INSTALL_DIR'
+        }
+        if ((Split-Path -Leaf $downloads[0]) -notlike '.reiterate-install-*.exe') {
+            throw 'Binary staging must use a unique installer filename'
+        }
+        if ($failure -notlike '*checksum mismatch*' -or $env:Path -cne $pathBefore) {
+            throw "Bad checksum must stop before PATH or registry access: $failure"
+        }
+        if (Test-Path -LiteralPath $downloads[0]) { throw 'Failed installation left binary staging behind' }
+        Write-Output 'PASS: same-directory binary staging and checksum-failure cleanup'
+    }
     Write-Output 'PASS: parser, dry-run caller preferences, AMD64/ARM64/WOW64 architecture, unsupported architecture, checksum match and rejection cases'
 } finally {
+    $env:REITERATE_VERSION = $savedVersion
+    $env:REITERATE_INSTALL_DIR = $savedInstallDir
     $env:REITERATE_INSTALL_DRYRUN = $savedDryRun
     $env:PROCESSOR_ARCHITECTURE = $savedArchitecture
     $env:PROCESSOR_ARCHITEW6432 = $savedWowArchitecture

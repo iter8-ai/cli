@@ -14,9 +14,9 @@ function Get-ReiterateArchitecture {
 }
 
 function Assert-ReiterateChecksum {
-    param([string]$BinaryPath, [string]$ChecksumsPath)
+    param([string]$BinaryPath, [string]$ChecksumsPath, [string]$FileName = (Split-Path -Leaf $BinaryPath))
 
-    $file = Split-Path -Leaf $BinaryPath
+    $file = $FileName
     $entries = @(Get-Content -LiteralPath $ChecksumsPath | Where-Object { ($_.Trim() -split '\s+')[-1] -ceq $file })
     if ($entries.Count -ne 1 -or $entries[0] -cnotmatch ('^([a-fA-F0-9]{64})  ' + [regex]::Escape($file) + '$')) {
         throw "reiterate: missing or invalid checksum for $file; nothing installed"
@@ -55,16 +55,16 @@ if ($env:REITERATE_INSTALL_DRYRUN -eq '1') {
     }
     $tmp = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
     New-Item -ItemType Directory -Path $tmp | Out-Null
+    New-Item -ItemType Directory -Path $dir -Force | Out-Null
+    $binary = Join-Path $dir ('.reiterate-install-' + [Guid]::NewGuid().ToString('N') + '.exe')
     $securityProtocol = [Net.ServicePointManager]::SecurityProtocol
     try {
         [Net.ServicePointManager]::SecurityProtocol = $securityProtocol -bor [Net.SecurityProtocolType]::Tls12
-        $binary = Join-Path $tmp $file
         $checksums = Join-Path $tmp 'checksums.txt'
         Invoke-WebRequest -Uri "$base/$file" -OutFile $binary @downloadOptions
         Invoke-WebRequest -Uri "$base/checksums.txt" -OutFile $checksums @downloadOptions
-        Assert-ReiterateChecksum -BinaryPath $binary -ChecksumsPath $checksums
+        Assert-ReiterateChecksum -BinaryPath $binary -ChecksumsPath $checksums -FileName $file
 
-        New-Item -ItemType Directory -Path $dir -Force | Out-Null
         $target = Join-Path $dir 'reiterate.exe'
         $old = $null
         if (Test-Path -LiteralPath $target) {
@@ -118,6 +118,9 @@ public static extern System.IntPtr SendMessageTimeout(System.IntPtr hWnd, uint m
         Write-Output 'Next:  reiterate login'
     } finally {
         [Net.ServicePointManager]::SecurityProtocol = $securityProtocol
+        if (Test-Path -LiteralPath $binary) {
+            Remove-Item -LiteralPath $binary -Force
+        }
         Remove-Item -LiteralPath $tmp -Recurse -Force
     }
 }
