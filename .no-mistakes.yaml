@@ -1,0 +1,6 @@
+# no-mistakes reads this file only from the trusted default branch, so edits apply to later runs.
+# This repository has no GitHub Actions CI; the local gate is the only check.
+# no_ci lets the CI step finish when no PR checks register instead of waiting for checks that never arrive.
+no_ci: true
+commands:
+  test: "sh -n install.sh && shellcheck install.sh && jq empty .claude-plugin/*.json .codex-plugin/*.json .agents/plugins/*.json"
