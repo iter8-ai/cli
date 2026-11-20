@@ -93,6 +93,14 @@ if ($env:REITERATE_INSTALL_DRYRUN -eq '1') {
             [string]$userPath = $environmentKey.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
             if (@($userPath -split ';' | ForEach-Object { [Environment]::ExpandEnvironmentVariables($_).Trim().TrimEnd('\') }) -notcontains $dir.TrimEnd('\')) {
                 $environmentKey.SetValue('Path', ($userPath.TrimEnd(';') + ';' + $dir).TrimStart(';'), [Microsoft.Win32.RegistryValueKind]::ExpandString)
+                if (-not ('Reiterate.InstallerEnvironment' -as [type])) {
+                    Add-Type -Namespace Reiterate -Name InstallerEnvironment -MemberDefinition @'
+[System.Runtime.InteropServices.DllImport("user32.dll", CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+public static extern System.IntPtr SendMessageTimeout(System.IntPtr hWnd, uint msg, System.UIntPtr wParam, string lParam, uint flags, uint timeout, out System.UIntPtr result);
+'@
+                }
+                $broadcastResult = [UIntPtr]::Zero
+                [void][Reiterate.InstallerEnvironment]::SendMessageTimeout([IntPtr]0xffff, 0x1a, [UIntPtr]::Zero, 'Environment', 2, 5000, [ref]$broadcastResult)
             }
         } finally {
             $environmentKey.Dispose()
