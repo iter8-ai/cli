@@ -10,7 +10,11 @@ description: Use when the user asks about their Reiterate organization - workflo
 ## Steps
 
 1. Check the CLI: `reiterate version`. If it is missing, install it:
-   `curl -fsSL https://raw.githubusercontent.com/iter8-ai/cli/main/install.sh | sh`
+
+   - macOS or Linux: `curl -fsSL https://raw.githubusercontent.com/iter8-ai/cli/main/install.sh | sh`
+   - Windows PowerShell 5.1 or PowerShell 7: `irm https://raw.githubusercontent.com/iter8-ai/cli/main/install.ps1 | iex`
+
+   Windows installs AMD64 or ARM64 to `$env:LOCALAPPDATA\Programs\reiterate` and adds it to PATH. Set `REITERATE_INSTALL_DIR` or `REITERATE_VERSION` in the environment before installing to override the directory or version.
    On Linux, then run `reiterate configure set token_store file`.
    If `reiterate version` shows 0.1.0, rerun the install command; later versions update themselves daily. `reiterate update` installs a newer release at once, and `reiterate update --check` only reports one.
    To keep a specific installed version from 0.2.0 on, run `reiterate configure set auto_update off`.
