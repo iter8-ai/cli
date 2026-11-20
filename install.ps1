@@ -38,13 +38,6 @@
         $dir = Join-Path $env:LOCALAPPDATA 'Programs\reiterate'
     }
     $dir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($dir)
-    $version = $env:REITERATE_VERSION
-    if (-not $version -or $version -eq 'latest') {
-        $base = 'https://github.com/iter8-ai/cli/releases/latest/download'
-    } else {
-        $base = 'https://github.com/iter8-ai/cli/releases/download/v' + $version.TrimStart('v')
-    }
-
     $downloadOptions = @{ UseBasicParsing = $true }
     if ($PSVersionTable.PSVersion.Major -ge 6) {
         $downloadOptions.SslProtocol = 'Tls12'
@@ -56,6 +49,18 @@
     $securityProtocol = [Net.ServicePointManager]::SecurityProtocol
     try {
         [Net.ServicePointManager]::SecurityProtocol = $securityProtocol -bor [Net.SecurityProtocolType]::Tls12
+        $version = $env:REITERATE_VERSION
+        $latest = -not $version -or $version -eq 'latest'
+        if ($latest) {
+            $version = (Invoke-RestMethod -Uri 'https://github.com/iter8-ai/cli/releases/latest/download/manifest.json' @downloadOptions).version
+        } else {
+            $version = $version -creplace '^v', ''
+        }
+        if ($version -isnot [string] -or $version -cnotmatch '^[0-9]+\.[0-9]+\.[0-9]+\z') {
+            if ($latest) { throw 'reiterate: could not resolve the latest release version' }
+            throw "reiterate: invalid release version '$version'"
+        }
+        $base = 'https://github.com/iter8-ai/cli/releases/download/v' + $version
         $checksums = Join-Path $tmp 'checksums.txt'
         Invoke-WebRequest -Uri "$base/$file" -OutFile $binary @downloadOptions
         Invoke-WebRequest -Uri "$base/checksums.txt" -OutFile $checksums @downloadOptions

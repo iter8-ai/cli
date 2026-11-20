@@ -39,7 +39,11 @@ while [ "$#" -gt 0 ]; do
     shift
 done
 printf '%s\n' "$uri" >> "$TEST_ROOT/urls"
-cp "$TEST_ROOT/fixtures/${uri##*/}" "$out"
+if [ "${uri##*/}" = manifest.json ] && [ "${INVALID_MANIFEST:-0}" = 1 ]; then
+    printf '{\n  "version": "not-a-version"\n}\n' > "$out"
+else
+    cp "$TEST_ROOT/fixtures/${uri##*/}" "$out"
+fi
 STUB
 cat > "$test_root/bin/mv" <<'STUB'
 #!/bin/sh
@@ -76,3 +80,48 @@ source_path=$(sed -n '3p' "$test_root/moves")
 [ ! -e "$source_path" ]
 [ ! -e "$REITERATE_INSTALL_DIR/reiterate" ]
 echo 'PASS: same-directory shell staging, installed executable content and failure cleanup'
+
+# Resolve latest once, then fetch both assets from that immutable release.
+printf '{\n  "version": "9.8.7",\n  "files": []\n}\n' > "$test_root/fixtures/manifest.json"
+REITERATE_INSTALL_DIR="$test_root/latest install"
+REITERATE_VERSION=latest
+export REITERATE_INSTALL_DIR REITERATE_VERSION
+: > "$test_root/urls"
+sh "$root/install.sh" > "$test_root/output" 2>&1
+cat > "$test_root/expected-urls" <<'URLS'
+https://github.com/iter8-ai/cli/releases/latest/download/manifest.json
+https://github.com/iter8-ai/cli/releases/download/v9.8.7/reiterate-linux-amd64
+https://github.com/iter8-ai/cli/releases/download/v9.8.7/checksums.txt
+URLS
+if ! cmp -s "$test_root/expected-urls" "$test_root/urls"; then
+    echo 'FAIL: latest must resolve one manifest and pin both assets to v9.8.7' >&2
+    cat "$test_root/urls" >&2
+    exit 1
+fi
+REITERATE_INSTALL_DIR="$test_root/invalid latest"
+export REITERATE_INSTALL_DIR
+: > "$test_root/urls"
+if INVALID_MANIFEST=1 sh "$root/install.sh" > "$test_root/output" 2>&1; then
+    echo 'FAIL: invalid manifest version was accepted' >&2
+    exit 1
+fi
+grep -q 'reiterate: could not resolve the latest release version' "$test_root/output"
+[ ! -e "$REITERATE_INSTALL_DIR/reiterate" ]
+[ "$(wc -l < "$test_root/urls" | tr -d ' ')" = 1 ]
+for REITERATE_VERSION in 9.8.7 v9.8.7 invalid vv9.8.7; do
+    export REITERATE_VERSION
+    : > "$test_root/urls"
+    case "$REITERATE_VERSION" in
+        9.8.7|v9.8.7)
+            sh "$root/install.sh" > "$test_root/output" 2>&1
+            tail -n 2 "$test_root/expected-urls" > "$test_root/expected-pinned"
+            cmp "$test_root/expected-pinned" "$test_root/urls" ;;
+        *)
+            if sh "$root/install.sh" > "$test_root/output" 2>&1; then
+                echo 'FAIL: invalid explicit version was accepted' >&2
+                exit 1
+            fi
+            [ ! -s "$test_root/urls" ] ;;
+    esac
+done
+echo 'PASS: shell latest resolution pins both assets and validates manifest/explicit versions'

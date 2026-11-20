@@ -23,15 +23,23 @@ case "$(uname -m)" in
 esac
 
 file="reiterate-$os-$arch"
-if [ "$version" = latest ]; then
-  base="https://github.com/$repo/releases/latest/download"
-else
-  base="https://github.com/$repo/releases/download/v${version#v}"
-fi
-
 tmp="$(mktemp -d)"
 staging="$dir/.reiterate.$$"
 trap 'rm -f "$staging"; rm -rf "$tmp"' EXIT INT TERM
+
+if [ "$version" = latest ]; then
+  curl -fsSL --proto '=https' --tlsv1.2 -o "$tmp/manifest.json" "https://github.com/$repo/releases/latest/download/manifest.json"
+  version="$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^" ]*\)".*/\1/p' "$tmp/manifest.json")"
+  version_error='reiterate: could not resolve the latest release version'
+else
+  version="${version#v}"
+  version_error="reiterate: invalid release version '$version'"
+fi
+if ! printf '%s\n' "$version" | awk 'END {exit !(NR == 1 && $0 ~ /^[0-9]+\.[0-9]+\.[0-9]+$/)}'; then
+  echo "$version_error" >&2
+  exit 1
+fi
+base="https://github.com/$repo/releases/download/v$version"
 
 curl -fsSL --proto '=https' --tlsv1.2 -o "$tmp/$file" "$base/$file"
 curl -fsSL --proto '=https' --tlsv1.2 -o "$tmp/checksums.txt" "$base/checksums.txt"
