@@ -30,7 +30,8 @@ else
 fi
 
 tmp="$(mktemp -d)"
-trap 'rm -rf "$tmp"' EXIT INT TERM
+staging="$dir/.reiterate.$$"
+trap 'rm -f "$staging"; rm -rf "$tmp"' EXIT INT TERM
 
 curl -fsSL --proto '=https' --tlsv1.2 -o "$tmp/$file" "$base/$file"
 curl -fsSL --proto '=https' --tlsv1.2 -o "$tmp/checksums.txt" "$base/checksums.txt"
@@ -47,8 +48,9 @@ if [ -z "$want" ] || [ "$want" != "$got" ]; then
 fi
 
 mkdir -p "$dir"
-chmod 755 "$tmp/$file"
-mv "$tmp/$file" "$dir/reiterate"
+cp "$tmp/$file" "$staging"
+chmod 755 "$staging"
+mv -f "$staging" "$dir/reiterate"
 
 echo "Installed $("$dir/reiterate" version) to $dir/reiterate"
 case ":$PATH:" in
