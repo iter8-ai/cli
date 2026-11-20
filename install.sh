@@ -11,7 +11,10 @@ version="${REITERATE_VERSION:-latest}"
 case "$(uname -s)" in
   Darwin) os=darwin ;;
   Linux) os=linux ;;
-  *) echo "reiterate: unsupported system $(uname -s); macOS and Linux only" >&2; exit 1 ;;
+  MINGW*|MSYS*|CYGWIN*)
+    echo "reiterate: on Windows, run in PowerShell: irm https://raw.githubusercontent.com/iter8-ai/cli/main/install.ps1 | iex" >&2
+    exit 1 ;;
+  *) echo "reiterate: unsupported system $(uname -s); use macOS, Linux or Windows (install.ps1)" >&2; exit 1 ;;
 esac
 case "$(uname -m)" in
   arm64|aarch64) arch=arm64 ;;

@@ -6,13 +6,25 @@ This version is read-only. No command changes client data.
 
 ## Install
 
-macOS and Linux, Intel or ARM:
+### macOS and Linux
+
+Intel or ARM:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/iter8-ai/cli/main/install.sh | sh
 ```
 
 The script downloads the binary for your machine from the [latest release](https://github.com/iter8-ai/cli/releases/latest), verifies its SHA-256 checksum and installs it to `~/.local/bin/reiterate`. Set `REITERATE_INSTALL_DIR` to install elsewhere, or `REITERATE_VERSION=0.1.0` to install a specific version.
+
+### Windows
+
+AMD64 or ARM64, in Windows PowerShell 5.1 or PowerShell 7:
+
+```powershell
+irm https://raw.githubusercontent.com/iter8-ai/cli/main/install.ps1 | iex
+```
+
+The script downloads the binary, verifies its SHA-256 checksum and installs it to `$env:LOCALAPPDATA\Programs\reiterate\reiterate.exe`. It adds the install directory to your user PATH and the current session's PATH. Set `$env:REITERATE_INSTALL_DIR` to install elsewhere, or `$env:REITERATE_VERSION = '0.2.2'` to install a specific version (`v0.2.2` also works).
 
 ## Log in
 
