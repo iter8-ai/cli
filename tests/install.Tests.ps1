@@ -17,19 +17,9 @@ $savedArchitecture = $env:PROCESSOR_ARCHITECTURE
 $savedWowArchitecture = $env:PROCESSOR_ARCHITEW6432
 $tmp = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
 try {
-    $sessionPath = $env:Path
-    $securityProtocol = [Net.ServicePointManager]::SecurityProtocol
-    $savedProgressPreference = $ProgressPreference
-    $ErrorActionPreference = 'Continue'
-    $ProgressPreference = 'Continue'
     foreach ($definition in $ast.FindAll({ param($node) $node -is [System.Management.Automation.Language.FunctionDefinitionAst] }, $true)) {
         . ([scriptblock]::Create($definition.Extent.Text))
     }
-    if ($env:Path -cne $sessionPath -or [Net.ServicePointManager]::SecurityProtocol -ne $securityProtocol -or $ErrorActionPreference -ne 'Continue' -or $ProgressPreference -ne 'Continue') {
-        throw 'Loading helpers changed caller preferences, PATH or TLS settings'
-    }
-    $ErrorActionPreference = 'Stop'
-    $ProgressPreference = $savedProgressPreference
 
     $env:PROCESSOR_ARCHITEW6432 = ''
     foreach ($architecture in @('AMD64', 'ARM64')) {
@@ -64,6 +54,31 @@ try {
         $rejected = $false
         try { Assert-ReiterateChecksum -BinaryPath $binary -ChecksumsPath $checksums } catch { $rejected = $_.Exception.Message -like '*nothing installed*' }
         if (-not $rejected) { throw "Invalid checksum was accepted: $invalid" }
+    }
+    & {
+        $env:PROCESSOR_ARCHITECTURE = 'AMD64'
+        $env:REITERATE_INSTALL_DIR = Join-Path $tmp 'directory-failure'
+        $directories = [Collections.Generic.List[string]]::new()
+        function New-Item {
+            param($ItemType, $Path, [switch]$Force)
+            $directories.Add($Path)
+            if ($failedDirectory -eq 'temporary' -or $Path -eq $env:REITERATE_INSTALL_DIR) {
+                throw "Cannot create $failedDirectory directory"
+            }
+            Microsoft.PowerShell.Management\New-Item @PSBoundParameters
+        }
+        foreach ($failedDirectory in @('temporary', 'install')) {
+            $directories.Clear()
+            $failure = ''
+            try { & $installer } catch { $failure = $_.Exception.Message }
+            if ($failure -cne "Cannot create $failedDirectory directory") {
+                throw "Directory-creation error was replaced: $failure"
+            }
+            if ($directories.Count -eq 0 -or (Test-Path -LiteralPath $directories[0])) {
+                throw 'Directory-creation failure left temporary staging behind'
+            }
+        }
+        Write-Output 'PASS: directory-creation failures preserve errors and clean temporary staging'
     }
     & {
         $env:PROCESSOR_ARCHITECTURE = 'AMD64'

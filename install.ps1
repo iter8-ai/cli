@@ -43,11 +43,12 @@
         $downloadOptions.SslProtocol = 'Tls12'
     }
     $tmp = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
-    New-Item -ItemType Directory -Path $tmp | Out-Null
-    New-Item -ItemType Directory -Path $dir -Force | Out-Null
-    $binary = Join-Path $dir ('.reiterate-install-' + [Guid]::NewGuid().ToString('N') + '.exe')
+    $binary = $null
     $securityProtocol = [Net.ServicePointManager]::SecurityProtocol
     try {
+        $binary = Join-Path $dir ('.reiterate-install-' + [Guid]::NewGuid().ToString('N') + '.exe')
+        New-Item -ItemType Directory -Path $tmp | Out-Null
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
         [Net.ServicePointManager]::SecurityProtocol = $securityProtocol -bor [Net.SecurityProtocolType]::Tls12
         $version = $env:REITERATE_VERSION
         $latest = -not $version -or $version -eq 'latest'
@@ -119,9 +120,11 @@ public static extern System.IntPtr SendMessageTimeout(System.IntPtr hWnd, uint m
         Write-Output 'Next:  reiterate login'
     } finally {
         [Net.ServicePointManager]::SecurityProtocol = $securityProtocol
-        if (Test-Path -LiteralPath $binary) {
+        if ($binary -and (Test-Path -LiteralPath $binary)) {
             Remove-Item -LiteralPath $binary -Force
         }
-        Remove-Item -LiteralPath $tmp -Recurse -Force
+        if (Test-Path -LiteralPath $tmp) {
+            Remove-Item -LiteralPath $tmp -Recurse -Force
+        }
     }
 }
