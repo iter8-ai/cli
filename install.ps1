@@ -1,8 +1,6 @@
 # Installs the Reiterate CLI from the latest public release.
 #   irm https://raw.githubusercontent.com/iter8-ai/cli/main/install.ps1 | iex
 # Settings: REITERATE_INSTALL_DIR (default $env:LOCALAPPDATA\Programs\reiterate), REITERATE_VERSION (default latest)
-$ErrorActionPreference = 'Stop'
-
 function Get-ReiterateArchitecture {
     $architecture = $env:PROCESSOR_ARCHITECTURE
     if ($env:PROCESSOR_ARCHITEW6432) {
@@ -34,68 +32,84 @@ if ($env:REITERATE_INSTALL_DRYRUN -eq '1') {
     return
 }
 
-$architecture = Get-ReiterateArchitecture
-$file = "reiterate-windows-$architecture.exe"
-$dir = $env:REITERATE_INSTALL_DIR
-if (-not $dir) {
-    $dir = Join-Path $env:LOCALAPPDATA 'Programs\reiterate'
-}
-$dir = [IO.Path]::GetFullPath($dir)
-$version = $env:REITERATE_VERSION
-if (-not $version -or $version -eq 'latest') {
-    $base = 'https://github.com/iter8-ai/cli/releases/latest/download'
-} else {
-    $base = 'https://github.com/iter8-ai/cli/releases/download/v' + $version.TrimStart('v')
-}
-
-[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-$downloadOptions = @{ UseBasicParsing = $true }
-if ($PSVersionTable.PSVersion.Major -ge 6) {
-    $downloadOptions.SslProtocol = 'Tls12'
-}
-$tmp = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
-New-Item -ItemType Directory -Path $tmp | Out-Null
-try {
-    $binary = Join-Path $tmp $file
-    $checksums = Join-Path $tmp 'checksums.txt'
-    Invoke-WebRequest -Uri "$base/$file" -OutFile $binary @downloadOptions
-    Invoke-WebRequest -Uri "$base/checksums.txt" -OutFile $checksums @downloadOptions
-    Assert-ReiterateChecksum -BinaryPath $binary -ChecksumsPath $checksums
-
-    New-Item -ItemType Directory -Path $dir -Force | Out-Null
-    $target = Join-Path $dir 'reiterate.exe'
-    $old = "$target.old"
-    if (Test-Path -LiteralPath $target) {
-        if (Test-Path -LiteralPath $old) {
-            Remove-Item -LiteralPath $old -Force
-        }
-        # Windows can rename a running executable even when it cannot overwrite it.
-        Rename-Item -LiteralPath $target -NewName 'reiterate.exe.old'
+& {
+    $ErrorActionPreference = 'Stop'
+    $ProgressPreference = 'SilentlyContinue'
+    $architecture = Get-ReiterateArchitecture
+    $file = "reiterate-windows-$architecture.exe"
+    $dir = $env:REITERATE_INSTALL_DIR
+    if (-not $dir) {
+        $dir = Join-Path $env:LOCALAPPDATA 'Programs\reiterate'
     }
+    $dir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($dir)
+    $version = $env:REITERATE_VERSION
+    if (-not $version -or $version -eq 'latest') {
+        $base = 'https://github.com/iter8-ai/cli/releases/latest/download'
+    } else {
+        $base = 'https://github.com/iter8-ai/cli/releases/download/v' + $version.TrimStart('v')
+    }
+
+    $downloadOptions = @{ UseBasicParsing = $true }
+    if ($PSVersionTable.PSVersion.Major -ge 6) {
+        $downloadOptions.SslProtocol = 'Tls12'
+    }
+    $tmp = Join-Path ([IO.Path]::GetTempPath()) ([IO.Path]::GetRandomFileName())
+    New-Item -ItemType Directory -Path $tmp | Out-Null
+    $securityProtocol = [Net.ServicePointManager]::SecurityProtocol
     try {
-        Move-Item -LiteralPath $binary -Destination $target
-    } catch {
-        if ((Test-Path -LiteralPath $old) -and -not (Test-Path -LiteralPath $target)) {
-            Rename-Item -LiteralPath $old -NewName 'reiterate.exe'
+        [Net.ServicePointManager]::SecurityProtocol = $securityProtocol -bor [Net.SecurityProtocolType]::Tls12
+        $binary = Join-Path $tmp $file
+        $checksums = Join-Path $tmp 'checksums.txt'
+        Invoke-WebRequest -Uri "$base/$file" -OutFile $binary @downloadOptions
+        Invoke-WebRequest -Uri "$base/checksums.txt" -OutFile $checksums @downloadOptions
+        Assert-ReiterateChecksum -BinaryPath $binary -ChecksumsPath $checksums
+
+        New-Item -ItemType Directory -Path $dir -Force | Out-Null
+        $target = Join-Path $dir 'reiterate.exe'
+        $old = $null
+        if (Test-Path -LiteralPath $target) {
+            $old = "$target.old"
+            if (Test-Path -LiteralPath $old) {
+                try {
+                    Remove-Item -LiteralPath $old -Force
+                } catch {
+                    $old = "$target.$([Guid]::NewGuid().ToString('N')).old"
+                }
+            }
+            # Windows can rename a running executable even when it cannot overwrite it.
+            Rename-Item -LiteralPath $target -NewName (Split-Path -Leaf $old)
         }
-        throw
-    }
+        try {
+            Move-Item -LiteralPath $binary -Destination $target
+        } catch {
+            if ($old -and (Test-Path -LiteralPath $old) -and -not (Test-Path -LiteralPath $target)) {
+                Rename-Item -LiteralPath $old -NewName 'reiterate.exe'
+            }
+            throw
+        }
 
-    [string]$userPath = [Environment]::GetEnvironmentVariable('Path', 'User')
-    if (@($userPath -split ';' | ForEach-Object { $_.Trim().TrimEnd('\') }) -notcontains $dir.TrimEnd('\')) {
-        [Environment]::SetEnvironmentVariable('Path', ($userPath.TrimEnd(';') + ';' + $dir).TrimStart(';'), 'User')
-    }
-    [string]$sessionPath = $env:Path
-    if (@($sessionPath -split ';' | ForEach-Object { $_.Trim().TrimEnd('\') }) -notcontains $dir.TrimEnd('\')) {
-        $env:Path = ($sessionPath.TrimEnd(';') + ';' + $dir).TrimStart(';')
-    }
+        $environmentKey = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Environment')
+        try {
+            [string]$userPath = $environmentKey.GetValue('Path', '', [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames)
+            if (@($userPath -split ';' | ForEach-Object { [Environment]::ExpandEnvironmentVariables($_).Trim().TrimEnd('\') }) -notcontains $dir.TrimEnd('\')) {
+                $environmentKey.SetValue('Path', ($userPath.TrimEnd(';') + ';' + $dir).TrimStart(';'), [Microsoft.Win32.RegistryValueKind]::ExpandString)
+            }
+        } finally {
+            $environmentKey.Dispose()
+        }
+        [string]$sessionPath = $env:Path
+        if (@($sessionPath -split ';' | ForEach-Object { [Environment]::ExpandEnvironmentVariables($_).Trim().TrimEnd('\') }) -notcontains $dir.TrimEnd('\')) {
+            $env:Path = ($sessionPath.TrimEnd(';') + ';' + $dir).TrimStart(';')
+        }
 
-    $installedVersion = & $target version
-    if ($LASTEXITCODE -ne 0) {
-        throw "reiterate: installed executable could not report its version (exit $LASTEXITCODE)"
+        $installedVersion = & $target version
+        if ($LASTEXITCODE -ne 0) {
+            throw "reiterate: installed executable could not report its version (exit $LASTEXITCODE)"
+        }
+        Write-Output "Installed $installedVersion to $target"
+        Write-Output 'Next:  reiterate login'
+    } finally {
+        [Net.ServicePointManager]::SecurityProtocol = $securityProtocol
+        Remove-Item -LiteralPath $tmp -Recurse -Force
     }
-    Write-Output "Installed $installedVersion to $target"
-    Write-Output 'Next:  reiterate login'
-} finally {
-    Remove-Item -LiteralPath $tmp -Recurse -Force
 }

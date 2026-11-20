@@ -16,10 +16,15 @@ try {
     $env:REITERATE_INSTALL_DRYRUN = '1'
     $sessionPath = $env:Path
     $securityProtocol = [Net.ServicePointManager]::SecurityProtocol
+    $savedProgressPreference = $ProgressPreference
+    $ErrorActionPreference = 'Continue'
+    $ProgressPreference = 'Continue'
     . $installer
-    if ($env:Path -cne $sessionPath -or [Net.ServicePointManager]::SecurityProtocol -ne $securityProtocol) {
-        throw 'Dry run changed PATH or TLS settings'
+    if ($env:Path -cne $sessionPath -or [Net.ServicePointManager]::SecurityProtocol -ne $securityProtocol -or $ErrorActionPreference -ne 'Continue' -or $ProgressPreference -ne 'Continue') {
+        throw 'Dry run changed caller preferences, PATH or TLS settings'
     }
+    $ErrorActionPreference = 'Stop'
+    $ProgressPreference = $savedProgressPreference
 
     $env:PROCESSOR_ARCHITEW6432 = ''
     foreach ($architecture in @('AMD64', 'ARM64')) {
@@ -55,7 +60,7 @@ try {
         try { Assert-ReiterateChecksum -BinaryPath $binary -ChecksumsPath $checksums } catch { $rejected = $_.Exception.Message -like '*nothing installed*' }
         if (-not $rejected) { throw "Invalid checksum was accepted: $invalid" }
     }
-    Write-Output 'PASS: parser, AMD64/ARM64/WOW64 architecture, unsupported architecture, checksum match and rejection cases'
+    Write-Output 'PASS: parser, dry-run caller preferences, AMD64/ARM64/WOW64 architecture, unsupported architecture, checksum match and rejection cases'
 } finally {
     $env:REITERATE_INSTALL_DRYRUN = $savedDryRun
     $env:PROCESSOR_ARCHITECTURE = $savedArchitecture
