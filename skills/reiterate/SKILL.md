@@ -1,6 +1,6 @@
 ---
 name: reiterate
-description: Use when the user asks about their Reiterate organization - workflows and workflow runs, failed runs, web agents, tasks, members, integrations or month-end status - or about their bookkeeping in Reiterate Accounting (os.reiterate.com) - companies, chart of accounts, sales invoices, purchase bills, bank rows, VAT returns, inbox documents, ledger, balance sheet or income statement - or asks to install, set up or log in to the reiterate CLI or the Reiterate plugin.
+description: Use when working with Reiterate organization workflows, runs, web agents, tasks, members, integrations or month-end; Reiterate Accounting bookkeeping at os.reiterate.com (invoices, bills, bank, VAT, ledger, reports); or installing or logging in to the reiterate CLI or Reiterate plugin.
 ---
 
 # Reiterate CLI
