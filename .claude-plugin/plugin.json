@@ -1,7 +1,7 @@
 {
   "name": "reiterate",
-  "version": "0.2.0",
-  "description": "Read Reiterate workflows, runs, web agents, tasks and month-end status with the reiterate CLI",
+  "version": "0.3.0",
+  "description": "Read Reiterate workflows, runs, web agents, tasks, month-end status and bookkeeping in Reiterate Accounting with the reiterate CLI",
   "author": { "name": "Reiterate", "url": "https://reiterate.com" },
   "homepage": "https://github.com/iter8-ai/cli",
   "repository": "https://github.com/iter8-ai/cli"

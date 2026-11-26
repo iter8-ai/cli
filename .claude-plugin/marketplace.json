@@ -6,7 +6,7 @@
     {
       "name": "reiterate",
       "source": "./",
-      "description": "Read Reiterate workflows, runs, web agents, tasks and month-end status with the reiterate CLI",
+      "description": "Read Reiterate workflows, runs, web agents, tasks, month-end status and bookkeeping in Reiterate Accounting with the reiterate CLI",
       "category": "productivity"
     }
   ]

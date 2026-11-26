@@ -2,7 +2,7 @@
 
 `reiterate` reads your Reiterate organization from the terminal: workflows and their runs, web agents, tasks, members, integrations and month-end status. It is built for people and for coding agents: every command prints JSON and documents itself with `--help`.
 
-This version is read-only. No command changes client data.
+Most commands are read-only; the few that change data preview first and need `--confirm`.
 
 ## Install
 
@@ -49,6 +49,18 @@ reiterate workflows list --company <name> --output table
 reiterate workflows runs list --company <name> --page-size 50 --limit 50
 reiterate workflows runs node-results <run-id> --company <name>
 reiterate --help
+```
+
+## Reiterate Accounting
+
+From 0.3.0, `reiterate accounting …` reads your bookkeeping in Reiterate Accounting (os.reiterate.com): companies, chart of accounts, sales invoices, purchase bills, bank rows, VAT returns, inbox documents, the ledger, the balance sheet and the income statement. It is read-only and has its own login: you approve access on os.reiterate.com, and you can revoke it there under Minu konto → Ühendatud AI-agendid.
+
+```sh
+reiterate accounting login            # or --remote on another machine
+reiterate accounting companies list --output table
+reiterate accounting bills list --company <registry code> --output table
+reiterate accounting reports balance-sheet --date 2026-10-31 --company <registry code>
+reiterate accounting --help
 ```
 
 ## Use with coding agents
