@@ -2,7 +2,7 @@
 
 `reiterate` reads your Reiterate organization from the terminal: workflows and their runs, web agents, tasks, members, integrations and month-end status. It is built for people and for coding agents: every command prints JSON and documents itself with `--help`.
 
-This version is read-only. No command changes client data.
+Most commands are read-only; the few that change data preview first and need `--confirm`.
 
 ## Install
 
