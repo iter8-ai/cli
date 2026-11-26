@@ -19,7 +19,7 @@ description: Use when the user asks about their Reiterate organization - workflo
    If `reiterate version` shows 0.1.0, rerun the install command; later versions update themselves daily. `reiterate update` installs a newer release at once, and `reiterate update --check` only reports one.
    To keep a specific installed version from 0.2.0 on, run `reiterate configure set auto_update off`.
 2. Check the login: `reiterate status`. `logins` lists the organizations already available.
-3. If the organization is missing or a command exits 3, the user must log in. You cannot do this for them.
+3. If the organization is missing or a non-accounting command exits 3, the user must log in. You cannot do this for them.
    - Same machine as their browser: ask them to run `reiterate login --company <name>`.
    - Remote or headless machine: run `reiterate login --remote --company <name>`, give the user the URL it prints, and when they paste back the one-time code run `reiterate login --remote --company <name> --code '<CODE>'`. The code expires after ten minutes and works once.
 4. Pass `--company <name>` on every command. Never rely on the default profile when the user named an organization.
@@ -74,7 +74,7 @@ The user can see and revoke this access in os.reiterate.com under Seaded → Min
 |---|---|---|
 | 0 | Success | |
 | 2 | Invalid arguments | Read `--help` and fix the command |
-| 3 | Login required or wrong organization | Step 3 |
+| 3 | Login required or wrong organization | Step 3, or Accounting step 1 for `reiterate accounting` commands |
 | 4 | Permission denied | Tell the user; their role does not allow it |
 | 5 | Not found | Check the id and the organization |
 | 6 | Conflict | Read the error and resolve the conflict before retrying |
