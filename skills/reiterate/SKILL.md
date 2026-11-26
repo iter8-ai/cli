@@ -1,11 +1,11 @@
 ---
 name: reiterate
-description: Use when the user asks about their Reiterate organization - workflows and workflow runs, failed runs, web agents, tasks, members, integrations or month-end status - or asks to install or log in to the reiterate CLI.
+description: Use when the user asks about their Reiterate organization - workflows and workflow runs, failed runs, web agents, tasks, members, integrations or month-end status - or about their bookkeeping in Reiterate Accounting (os.reiterate.com) - companies, chart of accounts, sales invoices, purchase bills, bank rows, VAT returns, inbox documents, ledger, balance sheet or income statement - or asks to install, set up or log in to the reiterate CLI or the Reiterate plugin.
 ---
 
 # Reiterate CLI
 
-`reiterate` reads a Reiterate organization from the terminal. This version is read-only: no command changes client data.
+`reiterate` reads a Reiterate organization from the terminal. Most commands are read-only; the few that change data preview first and need `--confirm`. `reiterate accounting …` reads Reiterate Accounting (os.reiterate.com) and is read-only.
 
 ## Steps
 
@@ -25,6 +25,29 @@ description: Use when the user asks about their Reiterate organization - workflo
 4. Pass `--company <name>` on every command. Never rely on the default profile when the user named an organization.
 5. Read the command's own help before the first use of a group: `reiterate <group> --help`. It lists the typical sequence and every flag.
 6. Answer from the JSON on stdout. Say which organization and which time range you read.
+
+## Reiterate Accounting (os.reiterate.com)
+
+The `accounting` group has its own login, separate from `reiterate login`. It needs CLI 0.3.0 or later (`reiterate version`; `reiterate update` installs it).
+
+1. Check it: `reiterate accounting status`. If `logged_in` is false, or a command exits 3, the user must approve access in their browser. You cannot do this for them.
+   - Same machine as their browser: run `reiterate accounting login`; their browser opens os.reiterate.com and they press "Luba".
+   - Remote or headless machine: run `reiterate accounting login --remote`, give the user the `url` it prints, and when they paste back the `state:code` text the page shows, run `reiterate accounting login --remote --code '<state:code>'`.
+2. `reiterate accounting companies list` shows the companies the user can read. Pass `--company` with the company's id, registry code or exact name on every command, or save a default with `reiterate configure set accounting_company <registry code>`.
+3. Commands (read-only):
+
+| Group | Commands |
+|---|---|
+| `accounting companies` | `list` |
+| `accounting accounts` | `list` chart of accounts |
+| `accounting reports` | `ledger --from --to`, `balance-sheet --date`, `income-statement --date` |
+| `accounting sales-invoices` | `list`, `show <id>` |
+| `accounting bills` | `list`, `show <id>` purchase invoices |
+| `accounting bank` | `accounts`, `transactions --bank <id>` unconfirmed statement rows |
+| `accounting vat-returns` | `list`, `show <id>` |
+| `accounting documents` | `list`, `show <id>` inbox documents |
+
+The user can see and revoke this access in os.reiterate.com under Seaded → Minu konto → Ühendatud AI-agendid. `reiterate accounting logout` revokes it from the terminal.
 
 ## Commands
 

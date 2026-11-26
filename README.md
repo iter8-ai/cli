@@ -51,6 +51,18 @@ reiterate workflows runs node-results <run-id> --company <name>
 reiterate --help
 ```
 
+## Reiterate Accounting
+
+From 0.3.0, `reiterate accounting …` reads your bookkeeping in Reiterate Accounting (os.reiterate.com): companies, chart of accounts, sales invoices, purchase bills, bank rows, VAT returns, inbox documents, the ledger, the balance sheet and the income statement. It is read-only and has its own login: you approve access on os.reiterate.com, and you can revoke it there under Minu konto → Ühendatud AI-agendid.
+
+```sh
+reiterate accounting login            # or --remote on another machine
+reiterate accounting companies list --output table
+reiterate accounting bills list --company <registry code> --output table
+reiterate accounting reports balance-sheet --date 2026-10-31 --company <registry code>
+reiterate accounting --help
+```
+
 ## Use with coding agents
 
 The repository is also a plugin marketplace for Claude Code and Codex. The plugin adds a skill that teaches the agent to install the CLI, handle login and read your organization.
