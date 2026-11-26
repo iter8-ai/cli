@@ -77,6 +77,7 @@ The user can see and revoke this access in os.reiterate.com under Seaded → Min
 | 3 | Login required or wrong organization | Step 3 |
 | 4 | Permission denied | Tell the user; their role does not allow it |
 | 5 | Not found | Check the id and the organization |
+| 6 | Conflict | Read the error and resolve the conflict before retrying |
 | 10 | Server or connection failure | Retry once, then report |
 
 ## Example: how did workflow runs go this week
